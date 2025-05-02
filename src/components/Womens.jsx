@@ -1,0 +1,51 @@
+import React from 'react';
+import Button from 'react-bootstrap/Button';
+import Card from 'react-bootstrap/Card';
+import w1 from '../assets/w1.jpg';
+import w2 from '../assets/w2.jpg';
+import w3 from '../assets/w3.jpg';
+import w5 from '../assets/w4.jpg';
+import { ToastContainer, toast } from 'react-toastify'; // Import ToastContainer and toast
+import 'react-toastify/dist/ReactToastify.css'; // Import Toastify styles
+
+const Womens = ({ onAddToCart }) => {
+  const womenscoll = [
+    { id: 5, img: w1, cat: 'Lehenga', price: '₹1000' },
+    { id: 6, img: w2, cat: 'Western', price: '₹800' },
+    { id: 7, img: w3, cat: 'Modern Wear', price: '₹400' },
+    { id: 8, img: w5, cat: 'Occasion Wear', price: '₹2400' }
+  ];
+
+  const handleAddToCart = (item) => {
+    onAddToCart(item);
+    toast.success(`${item.cat} added to cart!`); // Show a success toast notification
+  };
+
+  return (
+    <>
+      <div style={{ backgroundColor: '#E3BE84', color: 'white', fontSize: '40px', padding: '15px' }}>
+        Women's Collection
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'center', padding: '20px' }}>
+        {womenscoll.map((item, id) => (
+          <Card key={id} style={{ width: '18rem', height: '30rem' }}>
+            <Card.Img variant="top" src={item.img} style={{ height: '60%' }} />
+            <Card.Body>
+              <Card.Title style={{height:'40px'}}>{item.cat}</Card.Title>
+              <Card.Text>{item.price}</Card.Text>
+              <Button
+                style={{ backgroundColor: 'orange', border: 'none' }}
+                onClick={() => handleAddToCart(item)} // Trigger add to cart and show toast
+              >
+                Add to cart
+              </Button>
+            </Card.Body>
+          </Card>
+        ))}
+      </div>
+      <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} /> {/* Toast container */}
+    </>
+  );
+};
+
+export default Womens;
