@@ -10,12 +10,12 @@ const Shop = () => {
     setCartItems((prevItems) => {
       const existingItem = prevItems.find(item => item.cat === product.cat);
       if (existingItem) {
-        // Increase quantity if item already in cart
+
         return prevItems.map(item =>
           item.cat === product.cat ? { ...item, qty: item.qty + 1 } : item
         );
       } else {
-        // Add new item to cart
+
         return [...prevItems, { ...product, qty: 1 }];
       }
     });

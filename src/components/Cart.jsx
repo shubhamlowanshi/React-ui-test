@@ -1,19 +1,40 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-import { CgMathPlus } from "react-icons/cg";
-import { CgMathMinus } from "react-icons/cg";
+import React, { useState,useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { CgMathPlus, CgMathMinus } from 'react-icons/cg';
 import './Cart.css';
 
-const Cart = ({ cartItems = [], onAddToCart, onRemoveFromCart, onDeleteItem }) => {
-  
-  const parsePrice = (price) => parseInt(price.toString().replace(/[₹,]/g, ''));
-  
+const Cart = ({ cartItems = [], onAddToCart, onRemoveFromCart, onDeleteItem, refreshCart }) => {
+  const parsePrice = (price) => parseInt(price.toString().replace(/[\u20B9,]/g, ''));
+
   const total = cartItems.reduce((acc, item) => acc + parsePrice(item.price) * item.qty, 0);
   const tax = total * 0.05;
   const grandTotal = total + tax;
+
+  const navigate = useNavigate();
+  // const [cartItems, setCartItems] = useState([]);
+
+const fetchCartItems = async () => {
+  try {
+    const response = await axios.get('http://localhost:3000/api/cart');
+    setCartItems(response.data); // Update state with fresh cart items
+  } catch (err) {
+    console.error('Failed to fetch cart:', err);
+  }
+};
+
+
+
+
+  // 🔁 Only run on mount
+  useEffect(() => {
+    const shouldRefresh = localStorage.getItem('cartNeedsRefresh');
+    if (shouldRefresh === 'true') {
+      refreshCart(); // calls backend to get updated cart
+      localStorage.removeItem('cartNeedsRefresh');
+    }
+  }, []); // Only runs on component mount
   
-  const navigate = useNavigate() 
+
   return (
     <>
       <div style={{ backgroundColor: '#E3BE84', color: 'white', fontSize: '40px', padding: '15px' }}>
@@ -33,21 +54,28 @@ const Cart = ({ cartItems = [], onAddToCart, onRemoveFromCart, onDeleteItem }) =
                   <th>Qty</th>
                   <th>Price</th>
                   <th>Action</th>
+                  <th>Update</th>
                 </tr>
               </thead>
               <tbody>
                 {cartItems.map((item, index) => (
                   <tr key={index}>
-                    <td><img src={item.img} alt={item.cat} className="cart-img" /></td>
-                    <td>{item.cat}</td>
+                    <td><img src={item.imageUrl} alt={item.cat} className="cart-img" /></td>
+                    <td><strong>{item.name}</strong></td>
                     <td>
-                      <button onClick={() => onRemoveFromCart(item)} style={{ marginRight: '8px',border:'none',textDecoration:'none',backgroundColor:"#E3BE84"}}><CgMathMinus /></button>
+                      <button onClick={() => item.qty > 1 && onRemoveFromCart(item)} style={{ marginRight: '8px', border: 'none', backgroundColor: "#E3BE84" }}><CgMathMinus /></button>
                       <span>{item.qty}</span>
-                      <button onClick={() => onAddToCart(item)} style={{ marginLeft: '8px',border:'none',textDecoration:'none',backgroundColor:"#E3BE84" }}><CgMathPlus /></button>
+                      <button onClick={() => onAddToCart(item)} style={{ marginLeft: '8px', border: 'none', backgroundColor: "#E3BE84" }}><CgMathPlus /></button>
                     </td>
                     <td>₹{(parsePrice(item.price) * item.qty).toLocaleString()}</td>
+                    <td><button className="delete-btn" onClick={() => onDeleteItem(item)}>DELETE</button></td>
                     <td>
-                      <button className="delete-btn" onClick={() => onDeleteItem(item)}>DELETE</button>
+                      <button
+                        className="checkout-btn"
+                        onClick={() => navigate(`/update-product/${item._id}`, { state: item })}
+                      >
+                        UPDATE
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -67,21 +95,16 @@ const Cart = ({ cartItems = [], onAddToCart, onRemoveFromCart, onDeleteItem }) =
             <button
               className="checkout-btn"
               onClick={() => {
-                if (cartItems.length === 0) {
-                  alert('Please add something to cart first!');
-                } else {
-                 navigate('/checkout')
-                }
+                if (cartItems.length === 0) alert('Please add something to cart first!');
+                else navigate('/checkout');
               }}
             >
               CHECKOUT
             </button>
-
             <Link to="/mens">
               <button className="shopmore-btn">SHOP MORE</button>
             </Link>
           </div>
-
         </div>
       </div>
     </>

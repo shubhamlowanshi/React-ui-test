@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+// import { ToastContainer, toast } from 'react-toastify';
+// import 'react-toastify/dist/ReactToastify.css';
 import './Registration.css';
 
-const Registration = ({ setIsAuthenticated, setUsername }) => {
+const Registration = () => {
   const [formData, setFormData] = useState({
-    name: '',
+    username: '',
     email: '',
+    phone: '',
+    address: '',
     password: '',
     confirmPassword: '',
   });
@@ -13,25 +17,53 @@ const Registration = ({ setIsAuthenticated, setUsername }) => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const validateForm = () => {
+    const { username, email, phone, address, password, confirmPassword } = formData;
+
+    if (!username || !email || !phone || !address || !password || !confirmPassword) {
+      return 'Please fill all fields';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return 'Invalid email format';
+    }
+
+    if (!/^\d{10}$/.test(phone)) {
+      return 'Phone number must be exactly 10 digits';
+    }
+
+    if (password.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+
+    if (password !== confirmPassword) {
+      return 'Passwords do not match';
+    }
+
+    return '';
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    let val = value;
+
+    if (name === 'phone') {
+      val = val.replace(/\D/g, ''); // remove non-digits
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: val,
     }));
     setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { name, email, password, confirmPassword } = formData;
-
-    if (!name || !email || !password || !confirmPassword) {
-      setError('Please fill all fields');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -41,7 +73,7 @@ const Registration = ({ setIsAuthenticated, setUsername }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify(formData),
       });
 
       const data = await res.json();
@@ -51,7 +83,7 @@ const Registration = ({ setIsAuthenticated, setUsername }) => {
         return;
       }
 
-      // After successful registration, redirect to login
+      // toast.success(`Registration successful`);
       navigate('/login');
     } catch (err) {
       setError('Something went wrong. Please try again.');
@@ -59,25 +91,24 @@ const Registration = ({ setIsAuthenticated, setUsername }) => {
     }
   };
 
-
   return (
     <>
-      <div style={{ backgroundColor: '#E3BE84', color: 'white', fontSize: '40px', padding: '15px' }}>Registration Form</div>
+      <div style={{ backgroundColor: '#E3BE84', color: 'white', fontSize: '40px', padding: '15px' }}>
+        Registration Form
+      </div>
       <div className="login-container">
         <div className="login-box">
           <h2 className="login-title">User Registration</h2>
 
-          {/* Name Input */}
           <input
             type="text"
-            name="name"
-            placeholder="Enter your name"
+            name="username"
+            placeholder="Enter your username"
             className="login-input"
-            value={formData.name}
+            value={formData.username}
             onChange={handleChange}
           />
 
-          {/* Email Input */}
           <input
             type="email"
             name="email"
@@ -87,7 +118,25 @@ const Registration = ({ setIsAuthenticated, setUsername }) => {
             onChange={handleChange}
           />
 
-          {/* Password Input */}
+          <input
+            type="text"
+            name="phone"
+            placeholder="Phone Number"
+            className="login-input"
+            value={formData.phone}
+            maxLength="10"
+            onChange={handleChange}
+          />
+
+          <input
+            type="text"
+            name="address"
+            placeholder="Address"
+            className="login-input"
+            value={formData.address}
+            onChange={handleChange}
+          />
+
           <input
             type="password"
             name="password"
@@ -97,7 +146,6 @@ const Registration = ({ setIsAuthenticated, setUsername }) => {
             onChange={handleChange}
           />
 
-          {/* Confirm Password Input */}
           <input
             type="password"
             name="confirmPassword"
@@ -107,20 +155,17 @@ const Registration = ({ setIsAuthenticated, setUsername }) => {
             onChange={handleChange}
           />
 
-          {/* Error Message */}
           {error && <p className="error-text">{error}</p>}
 
-          {/* Submit Button */}
           <button className="login-button" onClick={handleSubmit}>Register</button>
 
           <div className="logo">BRAINSKART</div>
-
-          {/* Link to login page */}
           <p className="register-text">
             Already have an account? <Link to='/login' className="register-link">Login</Link>
           </p>
         </div>
       </div>
+      {/* <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} /> */}
     </>
   );
 };

@@ -28,10 +28,9 @@ const Login = ({ setIsAuthenticated, setUsername }) => {
         return;
       }
 
-      // Save token to localStorage (optional)
+      
       localStorage.setItem('token', data.token);
 
-      // Optionally save user info
       localStorage.setItem('user', JSON.stringify(data.user));
 
       setIsAuthenticated(true);
@@ -64,8 +63,6 @@ const Login = ({ setIsAuthenticated, setUsername }) => {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-
-            {/* Password Input */}
             <input
               type="password"
               placeholder="Password"
@@ -75,10 +72,10 @@ const Login = ({ setIsAuthenticated, setUsername }) => {
               required
             />
 
-            {/* Error Message */}
+           
             {error && <p className="error-text">{error}</p>}
 
-            {/* Submit Button */}
+        
             <button type="submit" className="login-button">LOGIN</button>
           </form>
 

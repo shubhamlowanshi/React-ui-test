@@ -10,103 +10,183 @@ import Registration from "./components/Registration";
 import Navbars from "./components/Navbar";
 import Checkout from "./components/Checkout";
 import PaymentSuccess from "./components/PaymentSuccess";
+import AddProductForm from "./components/AddProductForm";
+import UserProfile from "./components/UserProfile";
+import SupportBot from "./components/SupportBot";
+import UpdateProduct from "./components/UpdateProduct";
+import OrderHistory from "./components/OrderHistory";
+import axios from "axios";
 
 function App() {
-  const [cartItems, setCartItems] = useState(() => {
-    // Load initial cart items from localStorage (if any)
-    const savedCartItems = localStorage.getItem('cartItems');
-    return savedCartItems ? JSON.parse(savedCartItems) : [];
-  });
-  const [username, setUsername] = useState('');
+  const [cartItems, setCartItems] = useState([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [username, setUsername] = useState("");
+  const [profileImage, setProfileImage] = useState(localStorage.getItem("profileImage") || "");
 
+  // Read authentication & user on mount
   useEffect(() => {
-    const auth = localStorage.getItem('isAuthenticated');
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (auth === "true") {
+    const auth = localStorage.getItem("isAuthenticated") === "true";
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (auth && user) {
       setIsAuthenticated(true);
-      if (user && user.name) {
-        setUsername(user.name);
-      }
+      setUsername(user.name || user.username || "User");
     }
+    setLoading(false);
   }, []);
 
-  const addToCart = (item) => {
-    setCartItems((prevItems) => {
-      const updatedCart = [...prevItems, item];
-      localStorage.setItem('cartItems', JSON.stringify(updatedCart)); // Store in localStorage
-      return updatedCart;
-    });
+  // Fetch cart items from backend
+  const fetchCartItems = async () => {
+    try {
+      const res = await axios.get("http://localhost:3000/api/cart");
+      setCartItems(res.data);
+    } catch (err) {
+      console.error("Error fetching cart:", err);
+    }
   };
-    useEffect(() => {
-    // Update localStorage whenever cartItems changes
-    localStorage.setItem('cartItems', JSON.stringify(cartItems));
+
+  // Load cart on mount
+  useEffect(() => {
+    fetchCartItems();
+  }, []);
+
+  // Save cart to localStorage on change
+  useEffect(() => {
+    localStorage.setItem("cartItems", JSON.stringify(cartItems));
   }, [cartItems]);
 
-
   const handleAddToCart = (item) => {
-    const exist = cartItems.find((x) => x.id === item.id);
+    const exist = cartItems.find((x) => x._id === item._id);
     if (exist) {
-      setCartItems(cartItems.map(x => x.id === item.id ? { ...x, qty: x.qty + 1 } : x));
+      setCartItems(
+        cartItems.map((x) =>
+          x._id === item._id ? { ...x, qty: x.qty + 1 } : x
+        )
+      );
     } else {
       setCartItems([...cartItems, { ...item, qty: 1 }]);
     }
   };
 
   const handleRemoveFromCart = (item) => {
-    const exist = cartItems.find((x) => x.id === item.id);
+    const exist = cartItems.find((x) => x._id === item._id);
     if (exist.qty === 1) {
-      setCartItems(cartItems.filter((x) => x.id !== item.id));
+      setCartItems(cartItems.filter((x) => x._id !== item._id));
     } else {
-      setCartItems(cartItems.map(x => x.id === item.id ? { ...x, qty: x.qty - 1 } : x));
+      setCartItems(
+        cartItems.map((x) =>
+          x._id === item._id ? { ...x, qty: x.qty - 1 } : x
+        )
+      );
     }
   };
 
   const handleDeleteItem = (item) => {
-    setCartItems(cartItems.filter((x) => x.id !== item.id));
+    setCartItems(cartItems.filter((x) => x._id !== item._id));
+  };
+
+  const handleUpdateItem = (itemId, updatedData) => {
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item._id === itemId ? { ...item, ...updatedData } : item
+      )
+    );
+  };
+
+  const clearCartItems = () => {
+    setCartItems([]);
+    localStorage.removeItem("cartItems");
   };
 
   const clearCart = () => {
     setCartItems([]);
   };
 
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+
+  if (loading) return null; // Wait until auth check finishes
+
   return (
-    
     <Router>
-      {/* Pass username and isAuthenticated to Navbar */}
-      <Navbars 
-        isAuthenticated={isAuthenticated} 
-        setIsAuthenticated={setIsAuthenticated} 
-        username={username} 
+      <Navbars
+        isAuthenticated={isAuthenticated}
+        setIsAuthenticated={setIsAuthenticated}
+        usernames={username}
+        cartItems={cartItems}
+        profileImage={profileImage}
+        clearCartItems={clearCartItems}
       />
 
       <Routes>
         {!isAuthenticated ? (
           <>
-            <Route path="/login" element={<Login setIsAuthenticated={setIsAuthenticated} setUsername={setUsername} />} />
-            <Route path="/register" element={<Registration setIsAuthenticated={setIsAuthenticated} setUsername={setUsername} />} />
+            <Route
+              path="/login"
+              element={
+                <Login
+                  setIsAuthenticated={setIsAuthenticated}
+                  setUsername={setUsername}
+                />
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <Registration
+                  setIsAuthenticated={setIsAuthenticated}
+                  setUsername={setUsername}
+                />
+              }
+            />
             <Route path="*" element={<Navigate to="/login" />} />
           </>
         ) : (
           <>
             <Route path="/" element={<Homepage />} />
-            <Route path="/mens" element={<MensCollection onAddToCart={handleAddToCart} />} />
-            <Route path="/womens" element={<Womens onAddToCart={handleAddToCart} />} />
-            <Route path="/kids" element={<Kids onAddToCart={handleAddToCart} />} />
-            <Route path="/cart" element={ 
-              <Cart 
-                cartItems={cartItems} 
-                onAddToCart={handleAddToCart} 
-                onRemoveFromCart={handleRemoveFromCart} 
-                onDeleteItem={handleDeleteItem} 
-              /> 
-            } />
-            <Route path="/checkout" element={<Checkout cartItems={cartItems} clearCart={clearCart} />} />
+            <Route
+              path="/mens"
+              element={<MensCollection onAddToCart={handleAddToCart} />}
+            />
+            <Route
+              path="/womens"
+              element={<Womens onAddToCart={handleAddToCart} />}
+            />
+            <Route
+              path="/kids"
+              element={<Kids onAddToCart={handleAddToCart} />}
+            />
+            <Route
+              path="/cart"
+              element={
+                <Cart
+                  cartItems={cartItems}
+                  onAddToCart={handleAddToCart}
+                  onRemoveFromCart={handleRemoveFromCart}
+                  onDeleteItem={handleDeleteItem}
+                  refreshCart={fetchCartItems}
+                />
+              }
+            />
+            <Route path="/update-product/:id" element={<UpdateProduct />} />
+            <Route path="/AddProductForm" element={<AddProductForm />} />
             <Route path="/PaymentSuccess" element={<PaymentSuccess />} />
+            <Route
+              path="/checkout"
+              element={<Checkout cartItems={cartItems} clearCart={clearCart} />}
+            />
+            <Route path="/profile" element={<UserProfile />} />
+            {storedUser && (
+              <Route
+                path="/orderhistory"
+                element={<OrderHistory userId={storedUser._id} />}
+              />
+            )}
             <Route path="*" element={<Navigate to="/" />} />
           </>
         )}
       </Routes>
+
+      {/* <SupportBot className="fixed bottom-4 right-4 z-50" /> */}
     </Router>
   );
 }
